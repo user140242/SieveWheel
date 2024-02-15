@@ -117,7 +117,7 @@ uint64_t double_segmented_bit_sieve_wheel_seg(uint64_t k_low_start, uint64_t k_l
     std::vector<uint8_t> Segment_0_t(segment_size_0_b);
     
     //segment scan
-    uint64_t k_low , kb_low, k_0_low, kmax_0, k1;
+    uint64_t k_low , k_0_low, kmax_0, k1 , kb_low = 0ull;
     for (k_low = k_low_start; k_low < k_low_stop; k_low += segment_size)
     {
         kb_low = k_low * nB;
@@ -243,7 +243,7 @@ uint64_t double_segmented_bit_sieve_wheel_seg(uint64_t k_low_start, uint64_t k_l
     if (ck_seg != 1 && kb == nB * k_end  && k_end != k_i)
     {
         //count prime numbers for k=k_end
-        if (kb - kb_low <= segment_size_b - nB && kb - kb_low >= 0ull)
+        if (kb - kb_low <= segment_size_b - nB && kb >= kb_low)
             for (ip = 0ull; ip < nR; ip++)
                 if(Segment_t[kb - kb_low + ip / 8] & (1 << (7 - (ip % 8))) && RW[ip] < n_f_mod_bW)
                     count_p++;
@@ -400,10 +400,6 @@ uint64_t double_segmented_bit_sieve_wheel_IF_MT(char *n_i, char *n_f, uint64_t m
 
         if (k_end >= 4500000ull)
             m_segment_size = 3ull;
-        else if (k_end >= 45000000ull)
-            m_segment_size = 4ull;
-        else if (k_end >= 450000000ull)
-            m_segment_size = 5ull;
         
         // get segment_size_min=p_(n_PB+1)*p_(n_PB+2)*...*p_(n_PB+p_mask_i)
         uint64_t segment_size_min = 1ull;
@@ -428,7 +424,7 @@ uint64_t double_segmented_bit_sieve_wheel_IF_MT(char *n_i, char *n_f, uint64_t m
         //vector used for the first segment containing prime numbers less than sqrt(sqrt(n_f))
         std::vector<uint8_t> Segment_0_0(nB * segments_size_0_0, 0xff);
  
-        uint64_t  p , pb , mb , mb_0 , ip , i , jb , j , jp , k1 , kmax , k , kb = 0ull, kb1 = 0ull;
+        uint64_t  p , pb , mb , ip , i , jb , j , jp , k1  , k , kb = 0ull, kb1 = 0ull;
         uint8_t  val_B;
         uint64_t kmax_0 = std::min(segments_size_0_0 , (uint64_t) std::sqrt(segments_size_0_0 / bW) + (uint64_t)3);
         //sieve for the first segment - includes prime numbers < sqrt(sqrt(n_f))
@@ -517,7 +513,7 @@ uint64_t double_segmented_bit_sieve_wheel_IF_MT(char *n_i, char *n_f, uint64_t m
             }
             //count prime numbers for k = k_end if k_end < sqrt_segments_size
             if (k_end < sqrt_segments_size && k_end != k_i)
-                if (kb1 == nB * (k_end - (k_0_low - segment_size_0)) && kb1 >= 0 && kb1 <= segment_size_0_b - nB)
+                if (kb1 == nB * (k_end - (k_0_low - segment_size_0)) && kb1 <= segment_size_0_b - nB)
                     for (ip = 0; ip < nR; ip++)
                         if(Segment_0_t[kb1 + ip / 8]& (1 << (7 - (ip % 8))) && RW[ip] < n_f_mod_bW)
                             count_p++;
