@@ -26,7 +26,7 @@ SOFTWARE.
 ///     This is a implementation of the bit wheel double segmented sieve 
 ///     multi-threaded with OpenMP (compile with -fopenmp option)
 ///     with max base wheel size choice  30 , 210 , 2310 
-///     Alternative solution and with the possibility of choosing n_start - v 1_1 - user140242
+///     Alternative solution and with the possibility of choosing n_start - v 1_2 - user140242
 
 #include <iostream>
 #include <cmath>
@@ -499,7 +499,7 @@ uint64_t double_segmented_bit_sieve_wheel_IF_MT(char *n_i, char *n_f, uint64_t m
                     for (kb = 0ull; kb < segment_size_0_b; kb++)
                         Segment_0_t[kb] = Segment_0_0[kb + k_0_low * nB];
                 }
-                if (k_0_low == (k_i / segment_size_0) * segment_size_0)
+                if ((k_0_low == (k_i / segment_size_0) * segment_size_0 && k_0_low != k_i) || (k_0_low == k_i && RW[0] < n_i_mod_bW))
                 {
                     //count prime numbers for k = k_i
                     for (ip = 0ull; ip < nR; ip++)
@@ -507,7 +507,10 @@ uint64_t double_segmented_bit_sieve_wheel_IF_MT(char *n_i, char *n_f, uint64_t m
                             if (k_end > k_i || (RW[ip] < n_f_mod_bW && k_end == k_i))
                                 count_p++;
                 }
-                for (kb1 = nB * (k_i - k_0_low + 1); kb1 < std::min (segment_size_0_b , nB * (k_end - k_0_low)); kb1++)
+                kb1 = 0ull;
+                if (k_i > k_0_low || (k_i == k_0_low && RW[0] < n_i_mod_bW))
+                    kb1 = nB * (k_i - k_0_low + 1);
+                for (; kb1 < std::min (segment_size_0_b , nB * (k_end - k_0_low)); kb1++)
                     count_p += bit_count[Segment_0_t[kb1]];
                 k_0_low += segment_size_0;
             }
@@ -599,13 +602,15 @@ int main()
 {
     char n_start[] = "0";
     char n_stop[] = "1000000000";
-
+    uint64_t bW_max = 210; //wheel size
+    uint64_t threads_max = 1; //maximum number of threads to use
+    
     uint64_t count = 0;
 
     auto ti = std::chrono::system_clock::now();
     //double_segmented_bit_sieve_wheel_IF_MT(n_start, n_stop, max_bW, max_threads) 
     //with max base wheel size choice max_bW = 30 , 210 , 2310 and max_threads maximum number of threads to use
-    count = double_segmented_bit_sieve_wheel_IF_MT(n_start, n_stop, 210, 1);
+    count = double_segmented_bit_sieve_wheel_IF_MT(n_start, n_stop, bW_max, threads_max);
     auto tf = std::chrono::system_clock::now();
     
     std::cout << "found " << count << " prime numbers >= " << n_start << " and < " << n_stop << std::endl;
