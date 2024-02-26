@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2023 user140242
+Copyright (c) 2024 user140242
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,9 @@ SOFTWARE.
 
 
 ///     This is a implementation of the bit wheel double segmented sieve 
-///     multi-threaded with OpenMP (compile with -fopenmp option)
+///     multi-threaded with OpenMP (compile with -fopenmp flag)
 ///     with max base wheel size choice  30 , 210 , 2310 
-///     Alternative solution and with the possibility of choosing n_start - v 1_2 - user140242
+///     Demonstration version of the sieve with double segmentation for numbers greater than 2^64 - v 1_2 - user140242
 
 #include <iostream>
 #include <cmath>
@@ -254,6 +254,8 @@ uint64_t double_segmented_bit_sieve_wheel_seg(uint64_t k_low_start, uint64_t k_l
 
 int gen_base_bW(char *n_str, uint64_t &r, uint64_t &k, uint64_t bW)
 {
+    // n = r + k * bW with r = n mod bW
+    // calculate r and k from integer n in string format if n < 10^32 and return 0
     int esp_base_N_10 = 18;
     int len_n_str = strlen(n_str);
     if (len_n_str > 32 || len_n_str == 0)
@@ -361,6 +363,12 @@ uint64_t double_segmented_bit_sieve_wheel_IF_MT(char *n_i, char *n_f, uint64_t m
     if ((k_end > 0ull || (k_end == 0ull && Primes_Base[n_PB - 1ull] < n_f_mod_bW)) && (k_end > k_i || (k_end == k_i && n_i_mod_bW < n_f_mod_bW)) && ck_val == 0)
     {
         uint64_t k_sqrt = (uint64_t) std::sqrt(k_end / bW) + 1ull;
+		
+        if (k_end >= 4500000ull && m_segment_size == 1ull)
+            m_segment_size = 3ull;
+		
+        if (k_sqrt >= 4500000ull && m_segment_size_0 == 1ull)
+            m_segment_size_0 = 3ull;
 
         //find reduct residue set modulo bW
         std::vector<char> Remainder_t(bW,true); 
@@ -398,9 +406,6 @@ uint64_t double_segmented_bit_sieve_wheel_IF_MT(char *n_i, char *n_f, uint64_t m
             RW_i[nR - 1 + nR * j] = RW[j1];
         }
 
-        if (k_end >= 4500000ull)
-            m_segment_size = 3ull;
-        
         // get segment_size_min=p_(n_PB+1)*p_(n_PB+2)*...*p_(n_PB+p_mask_i)
         uint64_t segment_size_min = 1ull;
         p_mask_i = std::min(p_mask_i, (uint64_t)7); //p_mask_i < 8    
@@ -515,7 +520,7 @@ uint64_t double_segmented_bit_sieve_wheel_IF_MT(char *n_i, char *n_f, uint64_t m
                 k_0_low += segment_size_0;
             }
             //count prime numbers for k = k_end if k_end < sqrt_segments_size
-            if (k_end < sqrt_segments_size && k_end != k_i)
+            if ((k_end < sqrt_segments_size && k_end != k_i) || kb1 == 0)
                 if (kb1 == nB * (k_end - (k_0_low - segment_size_0)) && kb1 <= segment_size_0_b - nB)
                     for (ip = 0; ip < nR; ip++)
                         if(Segment_0_t[kb1 + ip / 8]& (1 << (7 - (ip % 8))) && RW[ip] < n_f_mod_bW)
